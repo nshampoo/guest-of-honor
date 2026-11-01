@@ -20,7 +20,7 @@ function Scoreboard({ state, big = false }: { state: GameState; big?: boolean })
 
 export function LobbyScreen({ state, act }: Props) {
   const [name, setName] = useState("");
-  const add = (e: React.FormEvent) => {
+  const add = (e: React.SubmitEvent<HTMLFormElement>) => {
     e.preventDefault();
     act({ type: "addTeam", id: crypto.randomUUID(), name });
     setName("");
