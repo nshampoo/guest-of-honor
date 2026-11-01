@@ -146,10 +146,11 @@ api Lambda ──▶ Claude API (interview, clues, fact-check)
 ## 7. Phases
 
 1. **Board and engine, single-screen play.** Board type and validator, game reducer, answer matching, all tested. A single-screen app that plays a hand-written sample board. No backend. *Done 2026-11-01.*
-2. **Builder agent in the terminal.** A local script that runs the interview and writes a board JSON. Learn the Claude API and tool use before adding infra.
-3. **Builder on the web.** CDK stack (S3, CloudFront, api Lambda, DynamoDB, SNS, SSM), password gate, chat UI, editor with re-roll and pencil, unlisted links, the email on create, the owner script.
-4. **Rooms.** WebSocket API, start screen with QR code, host claim, team join and names, timer with end early, reveal and judge, running scoreboard.
-5. **Ship.** Gallery, quiet offline download, personal-website pages and workshop row.
+2. **Rooms, locally.** Pure room logic (who's connected, what each device may see), a local WebSocket dev server, and the TV, host, and team screens. Start screen with QR code, host claim, team names, timer with end early, reveal and judge, running scoreboard. Test with real phones on home wifi.
+3. **Rooms on AWS.** CDK stack: S3 and CloudFront for the app, API Gateway WebSocket API, rooms Lambda, DynamoDB.
+4. **Builder agent in the terminal.** A local script that runs the interview and writes a board JSON. Learn the Claude API and tool use before adding more infra.
+5. **Builder on the web.** api Lambda, password gate, chat UI, editor with re-roll and pencil, unlisted links, SNS email on create, the owner script.
+6. **Ship.** Gallery, quiet offline download, personal-website pages and workshop row.
 
 ## 8. Decided
 
@@ -164,6 +165,7 @@ api Lambda ──▶ Claude API (interview, clues, fact-check)
 - **2026-11-01** Rooms have a display-only TV, one host phone with the answers and controls, and one phone per team. Teams name themselves. The start screen shows a QR code.
 - **2026-11-01** Timed team answers, not a buzzer race. A round ends on the timer, when every team has answered, or when the host ends it. A running scoreboard shows between clues.
 - **2026-11-01** Stack: React + Vite + TypeScript, vitest for the engine, Node Lambdas, CDK in TypeScript.
+- **2026-11-01** Build the multiplayer game before the builder.
 
 ## 9. Open decisions
 
