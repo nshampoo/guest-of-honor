@@ -184,7 +184,8 @@ api Lambda ──▶ Claude API (interview, clues, fact-check)
 
 ### 6. Ship
 - [ ] Gallery page and the quiet offline download.
-- [ ] personal-website: `apps` entry in `infra/bin/infra.ts` (phones still connect to the WebSocket URL directly), story page at `site/guest-of-honor/`, `/open/` page, workshop row with `data-repo`, deploy.
+- [x] personal-website: `apps` entry, story page at `site/guest-of-honor/` (builder marked as building), `/open/` page, workshop row marked In progress. *Live 2026-11-01; the four-device script passes through shampoe.com.*
+- [ ] Update the story page and card once the builder works.
 
 ## 8. Decided
 
@@ -201,7 +202,7 @@ api Lambda ──▶ Claude API (interview, clues, fact-check)
 - **2026-11-01** Stack: React + Vite + TypeScript, vitest for the engine, Node Lambdas, CDK in TypeScript.
 - **2026-11-01** Build the multiplayer game before the builder.
 - **2026-11-01** Longer clocks: 60 seconds by default, 2 minutes for the final. The host can stop the timer, and then only the host ends the round.
-- **2026-11-01** Hook up shampoe.com after the builder works, not before.
+- **2026-11-01** Show it on shampoe.com now as a work in progress, with the builder marked as building. The site doesn't need to be perfect.
 - **2026-11-01** All site costs are managed in the AWS console. Claude goes through Claude Platform on AWS (AWS Marketplace billing, IAM auth, web search included). Bedrock was ruled out because it has no web search.
 - **2026-11-01** The builder writes hard clues by default. The game is about teams talking it through.
 
