@@ -40,3 +40,15 @@ export function loadedBoard(): unknown {
   }
 }
 export const saveBoard = (board: unknown) => store("goh-board", board === null ? null : JSON.stringify(board));
+
+// The editor's work in progress, so a refresh doesn't lose it.
+export function loadDraft(): unknown {
+  const json = stored("goh-draft");
+  try {
+    return json ? JSON.parse(json) : null;
+  } catch {
+    return null;
+  }
+}
+export const saveDraft = (board: unknown) => store("goh-draft", JSON.stringify(board));
+export const clearDraft = () => store("goh-draft", null);

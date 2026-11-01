@@ -29,7 +29,7 @@ The stack is `GuestOfHonor` in `us-east-1` (`cdk.json` pins the `personal` profi
 | Path | What |
 | --- | --- |
 | `src/engine/` | Pure logic with tests: board format, game reducer, answer matching, rooms (permissions and what each device sees) |
-| `src/ui/` | React app: home, single-screen play, TV, host phone, team phone |
+| `src/ui/` | React app: home, board editor, single-screen play, TV, host phone, team phone |
 | `src/boards/sample.json` | Hand-written sample board |
 | `dev/rooms-plugin.ts` | Local WebSocket rooms server inside the Vite dev server. Stands in for API Gateway and the rooms Lambda. |
 | `infra/lib/` | CDK stack: S3 + CloudFront for the app, WebSocket API, rooms Lambda, DynamoDB |

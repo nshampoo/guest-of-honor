@@ -86,3 +86,24 @@ a.primary { text-decoration: none; display: inline-block; border-radius: 8px; }
 }
 .timer.stopped { font-size: 28px; }
 .row { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
+
+.editor { max-width: 860px; }
+.editor .eyebrow a { color: inherit; }
+.editor input, .editor textarea { width: 100%; font: inherit; padding: 10px 12px; border-radius: 8px; border: 1px solid var(--tile); background: var(--panel); color: var(--text); }
+.editor input.big { font-size: 24px; font-weight: 700; }
+.editor-head { display: flex; flex-direction: column; gap: 8px; }
+.editor-bar { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; position: sticky; top: 0; background: var(--bg); padding: 8px 0; z-index: 1; }
+.editor-bar .primary { align-self: auto; }
+.category-edit { background: var(--panel); border-radius: 8px; padding: 12px 14px; }
+.category-edit summary { cursor: pointer; font-weight: 600; }
+.category-edit[open] { display: flex; flex-direction: column; gap: 12px; }
+.category-edit input, .category-edit textarea { background: var(--bg); }
+.clue-edit { display: grid; grid-template-columns: 56px 1fr 1fr; gap: 6px 8px; align-items: start; }
+.clue-edit strong { color: var(--accent); grid-row: span 3; padding-top: 10px; }
+.clue-edit textarea { grid-column: span 2; resize: vertical; }
+.banner ul { margin: 8px 0 0; padding-left: 20px; }
+@media (max-width: 700px) {
+  .clue-edit { grid-template-columns: 1fr; }
+  .clue-edit strong { grid-row: auto; padding-top: 0; }
+  .clue-edit textarea { grid-column: auto; }
+}

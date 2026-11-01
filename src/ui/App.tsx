@@ -2,8 +2,9 @@ import { useEffect, useState } from "react";
 import { validateBoard } from "../engine/board";
 import { type Action, newGame, reduce } from "../engine/game";
 import { currentBoard } from "./board";
-import { saveBoard } from "./ids";
+import { clearDraft, saveBoard } from "./ids";
 import { PhoneRoom, TvRoom } from "./rooms";
+import { Editor } from "./editor";
 import { GameScreen } from "./screens";
 
 function LocalGame() {
@@ -41,11 +42,13 @@ function Home() {
     setErrors(problems);
     if (problems.length === 0) {
       saveBoard(parsed);
+      clearDraft();
       setBoard(currentBoard());
     }
   };
   const useSample = () => {
     saveBoard(null);
+    clearDraft();
     setBoard(currentBoard());
     setErrors([]);
   };
@@ -63,6 +66,7 @@ function Home() {
         <input value={code} onChange={(e) => setCode(e.target.value)} placeholder="Room code" maxLength={4} />
         <button disabled={code.trim().length !== 4}>Join a room</button>
       </form>
+      <a href="?edit">Edit this board, or make your own</a>
       <details>
         <summary>Load a board</summary>
         <div className="stack">
@@ -88,5 +92,6 @@ export function App() {
   if (params.has("join")) return <PhoneRoom code={params.get("join")!.toUpperCase()} />;
   if (params.has("tv")) return <TvRoom code={params.get("room")} />;
   if (params.has("local")) return <LocalGame />;
+  if (params.has("edit")) return <Editor />;
   return <Home />;
 }

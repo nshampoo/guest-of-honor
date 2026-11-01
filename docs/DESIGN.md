@@ -177,7 +177,8 @@ api Lambda ──▶ Claude API (interview, clues, fact-check)
 - [ ] api Lambda function URL behind CloudFront at `/api/*`, streaming responses.
 - [ ] Password in SSM, checked before any Claude call. Daily cap counter.
 - [ ] `GAME#` and `SESSION#` items. Rooms start from a game id instead of the TV sending a board.
-- [ ] Chat UI, category cards, board editor with re-roll, pencil, and sources. Save unlisted or to the gallery.
+- [x] Board editor by hand (`?edit`): every field, sources, live validation, auto-saved draft, use or download. *Built 2026-11-01.*
+- [ ] Chat UI, category cards, re-roll in the editor. Save unlisted or to the gallery.
 - [ ] SNS topic with my email (passed at deploy), published on every save.
 - [ ] `npm run recent` owner script.
 

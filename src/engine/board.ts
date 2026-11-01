@@ -6,7 +6,19 @@ export type Board = { title: string; honoree: string; categories: Category[]; fi
 export const VALUES = [200, 400, 600, 800, 1000];
 export const CATEGORY_COUNT = 6;
 
-const isText = (v: unknown): v is string => typeof v === "string" && v.trim() !== "";
+export function blankBoard(): Board {
+  return {
+    title: "",
+    honoree: "",
+    categories: Array.from({ length: CATEGORY_COUNT }, () => ({
+      title: "",
+      clues: VALUES.map((value) => ({ value, clue: "", answer: "" })),
+    })),
+    final: { category: "", clue: "", answer: "" },
+  };
+}
+
+const isText =(v: unknown): v is string => typeof v === "string" && v.trim() !== "";
 
 function checkAnswerFields(c: Record<string, unknown>, where: string, errors: string[]) {
   if (!isText(c.clue)) errors.push(`${where}: missing clue`);
