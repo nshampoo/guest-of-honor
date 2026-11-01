@@ -107,6 +107,7 @@ No phones. The laptop is both TV and host. Teams answer out loud, and the host m
 - API Gateway WebSocket API with a Lambda per message. The room's game state lives in DynamoDB, and the Lambda runs the same engine reducer, then pushes the new state to every device.
 - A team is keyed by a random id the phone keeps in local storage, not by its WebSocket connection. If a phone locks or switches networks, it reconnects as the same team.
 - Each device gets only what it's allowed to see. The TV and teams never receive an answer before the reveal.
+- Only the host's phone can end a round: by tapping "End round", or automatically when its countdown hits zero. A Lambda only runs when a message arrives, so the host's phone is what tells the server time is up. The server checks the time itself and rejects answers after the end time, even if the host's "time's up" is late.
 
 ## 5. Architecture
 
