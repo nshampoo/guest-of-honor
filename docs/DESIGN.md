@@ -47,7 +47,8 @@ This is the main thing I'm here to learn.
 | Re-roll | Single call | Same schema for one clue, told which clues already exist so it doesn't repeat. |
 | Pencil | No LLM | Plain editing. |
 
-- **Model:** `claude-sonnet-5-5` with adaptive thinking. Effort `low` for the interview and `medium` for clue writing. Server-side refusal fallbacks on.
+- **Model:** `claude-sonnet-5-5` with adaptive thinking. Effort `low` for the interview and `medium` for clue writing.
+- **Claude Platform on AWS**, not an Anthropic API key and not Bedrock. Anthropic runs it, so it has web search (Bedrock doesn't). Calls are signed with AWS credentials, access is an IAM grant in CDK, and it bills through AWS Marketplace. No API key exists anywhere. The client is `@anthropic-ai/aws-sdk`, configured with `AWS_REGION` and a workspace id (not secret).
 - **Tools come back as structured data.** That's how the app trusts the board shape without parsing prose.
 - **Fact-checking is the main risk.** A wrong answer in front of a room ruins the moment. Every clue needs a source, and the editor shows it.
 
@@ -59,7 +60,7 @@ This is the main thing I'm here to learn.
 
 ### Cost per game
 
-Sonnet 5.5: $2 input / $10 output per million tokens. Web search: $10 per 1,000.
+Sonnet 5.5: $2 input / $10 output per million tokens. Web search: $10 per 1,000. Billed through AWS Marketplace, so it shows up in AWS Billing with everything else.
 
 | Step | Tokens | Searches | Cost |
 |---|---|---|---|
@@ -129,7 +130,7 @@ api Lambda ──▶ Claude API (interview, clues, fact-check)
 
 - **TypeScript everywhere.** React + Vite app, Node Lambdas, CDK in TypeScript. The engine is shared by the app and both Lambdas.
 - **Lambda function URL for the API, not API Gateway HTTP API.** Writing a board with web searches can take over a minute. HTTP APIs cut requests off at 30 seconds. Function URLs allow up to 15 minutes and can stream responses. CloudFront fronts the URL with origin access control.
-- **Secrets in SSM Parameter Store** as SecureStrings, created by hand: `/guest-of-honor/anthropic-api-key` and `/guest-of-honor/password`.
+- **The one secret is the builder password**, an SSM SecureString created by hand: `/guest-of-honor/password`. Claude needs no key (IAM, see section 3).
 - **Owner email for SNS** is passed at deploy time (`-c notifyEmail=...`) so it never lands in the public repo.
 - **AWS cost** should stay at or near zero: S3, CloudFront, Lambda, DynamoDB on-demand, SNS email, and SSM standard parameters are all tiny at this scale. A 10-team, 1-hour game is a few thousand WebSocket messages, a fraction of a cent.
 
@@ -164,7 +165,8 @@ api Lambda ──▶ Claude API (interview, clues, fact-check)
 - [x] Verify: the four-device script passes against the CloudFront URL (43 checks, 2026-11-01). Still to do: a real game with phones on cellular.
 
 ### 4. Builder agent in the terminal
-- [ ] `@anthropic-ai/sdk`, API key via `ant auth login` or gitignored `local/`.
+- [ ] Subscribe to Claude Platform on AWS in AWS Marketplace and create a workspace (by hand, in the console). Check first that it works on the AWS Free plan.
+- [ ] `@anthropic-ai/aws-sdk`. Locally it signs with the `personal` profile from `aws login`.
 - [ ] `npm run build-board`: interview in the terminal, `propose_categories` tool, approve or edit categories.
 - [ ] One clue-writing call per category in parallel, with `web_search` for fact-checking and a strict `write_clues` tool. Then the final clue.
 - [ ] `validateBoard`, save to `boards/<name>.json`.
@@ -199,6 +201,7 @@ api Lambda ──▶ Claude API (interview, clues, fact-check)
 - **2026-11-01** Build the multiplayer game before the builder.
 - **2026-11-01** Longer clocks: 60 seconds by default, 2 minutes for the final. The host can stop the timer, and then only the host ends the round.
 - **2026-11-01** Hook up shampoe.com after the builder works, not before.
+- **2026-11-01** All site costs are managed in the AWS console. Claude goes through Claude Platform on AWS (AWS Marketplace billing, IAM auth, web search included). Bedrock was ruled out because it has no web search.
 - **2026-11-01** The builder writes hard clues by default. The game is about teams talking it through.
 
 ## 9. Open decisions
