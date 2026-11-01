@@ -166,10 +166,10 @@ api Lambda ──▶ Claude API (interview, clues, fact-check)
 
 ### 4. Builder agent in the terminal
 - [ ] Subscribe to Claude Platform on AWS in AWS Marketplace and create a workspace (by hand, in the console). Check first that it works on the AWS Free plan.
-- [ ] `@anthropic-ai/aws-sdk`. Locally it signs with the `personal` profile from `aws login`.
-- [ ] `npm run build-board`: interview in the terminal, `propose_categories` tool, approve or edit categories.
-- [ ] One clue-writing call per category in parallel, with `web_search` for fact-checking and a strict `write_clues` tool. Then the final clue.
-- [ ] `validateBoard`, save to `boards/<name>.json`.
+- [x] `@anthropic-ai/aws-sdk`. Locally it signs with the `personal` profile from `aws login`. *Request signing verified 2026-11-01; the service answers "not subscribed" until the sign-up works.*
+- [x] `npm run build-board`: interview in the terminal, `propose_categories` tool, approve or edit categories. *Written, not yet run against Claude.*
+- [x] One clue-writing call per category in parallel, with `web_search` for fact-checking and a strict `write_clues` tool. Then the final clue. *Written, not yet run.* `--one` writes a single category for cheap prompt testing.
+- [x] `validateBoard`, save to `boards/<name>.json` (gitignored: boards describe real people).
 - [x] Home page "load a board" so the TV can host any board file.
 - [ ] Try it on a real friend. Log tokens and searches per run to check the cost math.
 

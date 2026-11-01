@@ -13,6 +13,13 @@ npm test        # engine tests
 npm run build   # type-check and build to dist/
 ```
 
+To build a board with the agent (needs Claude Platform on AWS; signs with your `aws login` session, no API key):
+
+```
+ANTHROPIC_AWS_WORKSPACE_ID=wrkspc_... npm run build-board          # interview, then writes boards/<name>.json
+ANTHROPIC_AWS_WORKSPACE_ID=wrkspc_... npm run build-board -- --one # one category, for testing prompts
+```
+
 To play with phones: open the **Network** address `npm run dev` prints (like `http://192.168.1.20:5173`) on the laptop, click "Start a room on this screen", and scan the QR code with phones on the same wifi. One phone taps "Host this game"; the rest join as teams.
 
 ## Deploy
@@ -31,6 +38,8 @@ The stack is `GuestOfHonor` in `us-east-1` (`cdk.json` pins the `personal` profi
 | `src/engine/` | Pure logic with tests: board format, game reducer, answer matching, rooms (permissions and what each device sees) |
 | `src/ui/` | React app: home, board editor, single-screen play, TV, host phone, team phone |
 | `src/boards/sample.json` | Hand-written sample board |
+| `builder/agent.ts` | The builder agent: interview prompt, `propose_categories`, parallel fact-checked clue writers. No terminal code, so a Lambda can reuse it. |
+| `builder/cli.ts` | Terminal front end for the builder |
 | `dev/rooms-plugin.ts` | Local WebSocket rooms server inside the Vite dev server. Stands in for API Gateway and the rooms Lambda. |
 | `infra/lib/` | CDK stack: S3 + CloudFront for the app, WebSocket API, rooms Lambda, DynamoDB |
 | `infra/lambda/rooms.ts` | Rooms Lambda: loads a room, runs the engine's `handle()`, saves with a version check, pushes each device its view |
