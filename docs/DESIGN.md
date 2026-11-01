@@ -151,16 +151,17 @@ api Lambda ──▶ Claude API (interview, clues, fact-check)
 2. **Rooms, locally.** Room logic, local WebSocket dev server, TV, host, and team screens, QR code, longer timers, stop timer. *Built 2026-11-01 and verified with a scripted four-device game in headless Chrome. Not yet tried on real phones.*
 
 ### 3. Rooms on AWS
-- [ ] `infra/` CDK app (TypeScript), one stack, same shape as the other shampoe.com apps.
-- [ ] Site: private S3 bucket behind CloudFront (origin access control). `BucketDeployment` uploads `dist/` with `Cache-Control` set, since the shampoe.com proxy only caches files that have it.
-- [ ] `config.json` written by the deploy with the WebSocket URL, so the app build doesn't need to know it. Dev falls back to the local rooms server.
-- [ ] DynamoDB table: `pk`/`sk`, on-demand, TTL on `expiresAt`.
-- [ ] API Gateway WebSocket API with a `prod` stage. `$connect`, `$disconnect`, and `$default` all go to the rooms Lambda.
-- [ ] Rooms Lambda (Node, arm64), bundled with esbuild from `infra/lambda/rooms.ts`. For each message: load the room, run `handle()`, save it, push each device its `viewFor()` through the API Gateway Management API.
-- [ ] Save with a version number and a conditional write; retry on conflict. Two teams answering in the same instant must not overwrite each other.
-- [ ] `CONN#<connId>` items map a connection to its room, for `$disconnect`. Connections that are gone (410) get dropped from the room.
-- [ ] Least-privilege IAM: the Lambda can read and write only this table and post only to this API.
-- [ ] Verify: run the four-device script against the CloudFront URL, then a real game with phones on cellular.
+*Deployed 2026-11-01: stack `GuestOfHonor`, site at `d2jg6m7pcvok9m.cloudfront.net`.*
+- [x] `infra/` CDK app (TypeScript), one stack, same shape as the other shampoe.com apps.
+- [x] Site: private S3 bucket behind CloudFront (origin access control). `BucketDeployment` uploads `dist/` with `Cache-Control` set, since the shampoe.com proxy only caches files that have it.
+- [x] `config.json` written by the deploy with the WebSocket URL, so the app build doesn't need to know it. Dev falls back to the local rooms server.
+- [x] DynamoDB table: `pk`/`sk`, on-demand, TTL on `expiresAt`.
+- [x] API Gateway WebSocket API with a `prod` stage. `$connect`, `$disconnect`, and `$default` all go to the rooms Lambda.
+- [x] Rooms Lambda (Node, arm64), bundled with esbuild from `infra/lambda/rooms.ts`. For each message: load the room, run `handle()`, save it, push each device its `viewFor()` through the API Gateway Management API.
+- [x] Save with a version number and a conditional write; retry on conflict. Two teams answering in the same instant must not overwrite each other.
+- [x] `CONN#<connId>` items map a connection to its room, for `$disconnect`. Connections that are gone (410) get dropped from the room.
+- [x] Least-privilege IAM: the Lambda can read and write only this table and post only to this API.
+- [x] Verify: the four-device script passes against the CloudFront URL (43 checks, 2026-11-01). Still to do: a real game with phones on cellular.
 - [ ] Add to shampoe.com: `apps` entry in personal-website `infra/bin/infra.ts`. Phones connect to the WebSocket URL directly, not through the proxy.
 
 ### 4. Builder agent in the terminal
