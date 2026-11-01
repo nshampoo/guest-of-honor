@@ -6,7 +6,12 @@ Planned for [shampoe.com/guest-of-honor](https://shampoe.com/guest-of-honor/). S
 
 ## Develop
 
-Nothing to run yet. The stack is proposed in the design doc.
+```
+npm install
+npm run dev     # http://localhost:5173, plays the sample board on one screen
+npm test        # engine tests
+npm run build   # type-check and build to dist/
+```
 
 ## Deploy
 
@@ -14,4 +19,7 @@ Not deployed yet.
 
 | Path | What |
 | --- | --- |
-| `docs/DESIGN.md` | Goal, architecture, agent design, cost, phases, decisions |
+| `src/engine/` | Pure logic: board format and validator, game reducer, answer matching, with tests |
+| `src/ui/` | React app. Single-screen play for now. |
+| `src/boards/sample.json` | Hand-written sample board |
+| `docs/DESIGN.md` | Goal, board format, builder and gameplay design, cost, phases, decisions |

@@ -1,0 +1,72 @@
+{
+  "title": "Alex's 30th",
+  "honoree": "Alex",
+  "categories": [
+    {
+      "title": "Marathon Mania",
+      "clues": [
+        { "value": 200, "clue": "The length of a marathon in miles, to one decimal place.", "answer": "26.2" },
+        { "value": 400, "clue": "Legend says this messenger ran from Marathon to Athens to announce a Greek victory.", "answer": "Pheidippides", "accept": ["Philippides"] },
+        { "value": 600, "clue": "First run in 1897, this city's marathon is the world's oldest annual marathon.", "answer": "Boston" },
+        { "value": 800, "clue": "In 2019 in Vienna, he became the first person to run a marathon in under two hours.", "answer": "Eliud Kipchoge", "accept": ["Kipchoge"] },
+        { "value": 1000, "clue": "In 1967 she became the first woman to run the Boston Marathon as a registered entrant, despite an official trying to pull her off the course.", "answer": "Kathrine Switzer", "accept": ["Switzer"] }
+      ]
+    },
+    {
+      "title": "Big Apple",
+      "clues": [
+        { "value": 200, "clue": "New York City is made up of this many boroughs.", "answer": "Five", "accept": ["5"] },
+        { "value": 400, "clue": "Frederick Law Olmsted and Calvert Vaux designed this 843-acre Manhattan park.", "answer": "Central Park" },
+        { "value": 600, "clue": "Opened in 1883, it was the first bridge across the East River.", "answer": "Brooklyn Bridge" },
+        { "value": 800, "clue": "The name of the Dutch settlement on Manhattan before the English took it over in 1664.", "answer": "New Amsterdam" },
+        { "value": 1000, "clue": "After nearly a century of plans, this subway line opened its first stations on Manhattan's Upper East Side in 2017.", "answer": "Second Avenue Subway", "accept": ["Second Avenue line", "2nd Avenue Subway", "Q train"] }
+      ]
+    },
+    {
+      "title": "Fresh Powder",
+      "clues": [
+        { "value": 200, "clue": "On North American trail maps, this shape and color marks the easiest runs.", "answer": "Green circle" },
+        { "value": 400, "clue": "Lake Placid, host of the 1980 Winter Olympics, is in this state.", "answer": "New York" },
+        { "value": 600, "clue": "The alpine skiing event with the fewest turns and the highest speeds.", "answer": "Downhill" },
+        { "value": 800, "clue": "In 2023, Mikaela Shiffrin broke this Swedish skier's record for most World Cup race wins.", "answer": "Ingemar Stenmark", "accept": ["Stenmark"] },
+        { "value": 1000, "clue": "Along with Deer Valley and Mad River Glen, this Utah resort is one of the few in the U.S. that bans snowboarders.", "answer": "Alta" }
+      ]
+    },
+    {
+      "title": "Coffee Run",
+      "clues": [
+        { "value": 200, "clue": "This espresso drink with lots of steamed milk takes its name from the Italian word for milk.", "answer": "Latte" },
+        { "value": 400, "clue": "The world's largest coffee producer.", "answer": "Brazil" },
+        { "value": 600, "clue": "Legend credits a goatherd named Kaldi in this modern-day country with discovering coffee.", "answer": "Ethiopia" },
+        { "value": 800, "clue": "The two main commercial coffee species are arabica and this one.", "answer": "Robusta", "accept": ["Coffea canephora", "Canephora"] },
+        { "value": 1000, "clue": "This espresso drink with a dollop of foam takes its name from the Italian for \"stained\" or \"marked.\"", "answer": "Macchiato" }
+      ]
+    },
+    {
+      "title": "Gridiron",
+      "clues": [
+        { "value": 200, "clue": "A touchdown is worth this many points.", "answer": "Six", "accept": ["6"] },
+        { "value": 400, "clue": "He holds the record for most Super Bowl wins by a player, with seven.", "answer": "Tom Brady", "accept": ["Brady"] },
+        { "value": 600, "clue": "This team won the first Super Bowl, in January 1967.", "answer": "Green Bay Packers", "accept": ["Packers", "Green Bay"] },
+        { "value": 800, "clue": "This team finished the 1972 season undefeated, Super Bowl included.", "answer": "Miami Dolphins", "accept": ["Dolphins", "Miami"] },
+        { "value": 1000, "clue": "The first Super Bowl was played at this city's Memorial Coliseum.", "answer": "Los Angeles", "accept": ["LA"] }
+      ]
+    },
+    {
+      "title": "Two Wheels",
+      "clues": [
+        { "value": 200, "clue": "New York City's bike share, launched in 2013, is named for this bank.", "answer": "Citi", "accept": ["Citibank", "Citigroup", "Citi Bike"] },
+        { "value": 400, "clue": "This three-week race traditionally finishes in Paris each July.", "answer": "Tour de France" },
+        { "value": 600, "clue": "The overall leader of the Tour de France wears a jersey of this color.", "answer": "Yellow" },
+        { "value": 800, "clue": "Popular in the 1870s and 1880s, this bicycle had a huge front wheel and a tiny back one.", "answer": "Penny-farthing", "accept": ["High wheeler", "Ordinary"] },
+        { "value": 1000, "clue": "In 2012, this American was stripped of his seven Tour de France titles.", "answer": "Lance Armstrong", "accept": ["Armstrong"] }
+      ]
+    }
+  ],
+  "final": {
+    "category": "Running Firsts",
+    "clue": "In 1954, at Oxford's Iffley Road track, he became the first person to run a mile in under four minutes.",
+    "answer": "Roger Bannister",
+    "accept": ["Bannister"]
+  }
+}

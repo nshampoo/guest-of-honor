@@ -4,31 +4,111 @@
 
 Build a party trivia board themed around one person. The categories come from their life (their school, their hobbies, their hometown), but the clues are real trivia anyone can answer. It's not a quiz about the person.
 
-A creator chats with an agent about the honoree. The agent proposes categories, writes fact-checked clues, and the creator tweaks them. Then the host runs the game on a TV while players answer from their phones.
+There are two halves:
+- **Builder:** a creator chats with an agent about the honoree. The agent proposes categories and writes fact-checked clues, and the creator tweaks them.
+- **Gameplay:** a host runs the game on a TV while teams answer from their phones.
+
+The halves only share one thing: **the board** (section 2). Each can be built and tested without the other.
 
 Hosted at `shampoe.com/guest-of-honor/`. The first users are me and my friends.
 
-## 2. How a game works
+## 2. The board
 
-**Making one**
+A board is JSON. The type and its validator live in `src/engine/board.ts`.
+
+```ts
+type Clue = { value: number; clue: string; answer: string; accept?: string[]; source?: string };
+type Category = { title: string; clues: Clue[] };             // 5 clues, 200 to 1000
+type FinalClue = { category: string; clue: string; answer: string; accept?: string[]; source?: string };
+type Board = { title: string; honoree: string; categories: Category[]; final: FinalClue };  // 6 categories
+```
+
+- `accept` lists other answers that count (e.g. "Lincoln" for "Abraham Lincoln").
+- `source` is the URL the builder used to check the fact.
+- The builder's job is "produce a valid board." Gameplay's job is "play any valid board."
+
+## 3. Builder
+
+### Flow
 1. **Interview.** The agent asks about the honoree and follows up on good threads.
 2. **Categories.** The agent proposes 6 categories. The creator approves, swaps, or renames them.
-3. **Clues.** The agent writes 5 clues per category (200 to 1000) plus a final clue, each with an answer and a source link.
-4. **Edit.** Every clue has a re-roll button (new clue from the agent) and a pencil (edit the text by hand).
-5. **Save.** The game is saved as **unlisted** (link only) or **gallery** (listed on the site). There's also a quiet "download" option for a single offline HTML file that plays in single-screen mode.
+3. **Clues.** The agent writes 5 clues per category plus a final clue, each with an answer and a source.
+4. **Edit.** Every clue has a re-roll button (new clue from the agent) and a pencil (edit by hand).
+5. **Save.** As **unlisted** (link only) or **gallery** (listed on the site). A quiet "download" option saves a single offline HTML file that plays in single-screen mode.
 
-**Playing one**
-1. The host opens the game on a TV or laptop and starts a room. The screen shows a room code and a QR code.
-2. Each team joins on one phone and types a team name. One device is one team.
-3. The host picks a tile. The clue shows on the TV and on phones, and a timer starts (30 seconds by default).
-4. Each team talks it over and submits one answer. This is not a race. Nobody buzzes in first. The round ends when the timer runs out, when every team has answered, or when the host ends it early.
-5. The TV reveals every team's answer next to the correct one. The engine suggests which answers match, and the host taps to confirm. Every correct team scores. Wrong answers cost nothing.
-6. The TV shows the running scoreboard, then goes back to the board.
-7. Final round: teams wager, then answer.
+### Agent design
 
-Without a room, the host can still run the game on one screen and judge answers out loud.
+This is the main thing I'm here to learn.
 
-## 3. Architecture
+| Step | Pattern | Details |
+|---|---|---|
+| Interview | Conversational agent | System prompt gives it a goal (find 6 rich, specific themes) and a sense of when it's done. When ready, it calls a `propose_categories` tool, and the UI renders those as editable cards. |
+| Clues | Workflow, one call per category, run in parallel | Each call gets the category, the honoree context, and the crowd (difficulty, tone). It uses the `web_search` server tool to check facts and returns clues through a strict `write_clues` tool schema. |
+| Re-roll | Single call | Same schema for one clue, told which clues already exist so it doesn't repeat. |
+| Pencil | No LLM | Plain editing. |
+
+- **Model:** `claude-sonnet-5-5` with adaptive thinking. Effort `low` for the interview and `medium` for clue writing. Server-side refusal fallbacks on.
+- **Tools come back as structured data.** That's how the app trusts the board shape without parsing prose.
+- **Fact-checking is the main risk.** A wrong answer in front of a room ruins the moment. Every clue needs a source, and the editor shows it.
+
+### Access and limits
+- Anyone can browse the gallery and play any game they have a link to.
+- Creating or re-rolling needs the shared password. The api Lambda checks it against SSM before calling Claude.
+- A daily cap (a counter row in DynamoDB) limits how many games can be made, even with the password.
+- I get an SNS email every time a game is created (title, categories, link, not the chat). I can see every game, including unlisted ones, and the create screen says so.
+
+### Cost per game
+
+Sonnet 5.5: $2 input / $10 output per million tokens. Web search: $10 per 1,000.
+
+| Step | Tokens | Searches | Cost |
+|---|---|---|---|
+| Interview, about 10 turns | about 40K in, 5K out | 0 | about $0.13 (less with prompt caching) |
+| Clues, 6 categories + final | about 10K in, 12K out (with thinking) | 0 | about $0.14 |
+| Fact-check | about 150K to 250K in from search results | about 31 | $0.31 searches + $0.30 to $0.50 tokens |
+| **Total** | | | **about $0.90 to $1.10** |
+
+At 10 games a month that's about $10. The same game on Opus 5.5 would be about $1.50 to $2.00. To cut cost further, search only for clues the model flags as unsure.
+
+## 4. Gameplay
+
+### Devices in a room
+
+| Device | Shows | Can do |
+|---|---|---|
+| **TV** (laptop on a TV) | Board, clue, timer, revealed answers, scoreboard. Never the answer before the reveal. | Nothing. Display only. |
+| **Host phone** | Everything the TV shows, plus the answer and each team's submission | Pick tiles, end a round early, mark right or wrong, adjust scores |
+| **Team phones** | The open clue, the timer, their answer box, their score | Name the team, submit an answer, wager in the final |
+
+The host runs the game and doesn't play, since they can see the answers.
+
+### Starting a game
+1. The TV opens the game and creates a room. It shows a big **QR code** and a room code, plus the list of teams as they join.
+2. The first phone to scan can claim **host**. Every other phone joins as a team: one phone is one team, and the team types its name.
+3. The host taps start.
+
+### A round
+1. The host picks a tile. The clue shows on the TV and team phones, and a timer starts (30 seconds by default).
+2. Teams talk it over and submit one answer. This is not a race.
+3. The round ends when the timer runs out, every team has answered, or the host ends it early.
+4. The TV reveals every team's answer next to the correct one. The engine suggests which answers match, and the host confirms. Every correct team scores the clue's value. Wrong answers cost nothing.
+5. The TV shows the running scoreboard, then the board.
+6. After the last tile: final round. Teams wager up to their score, then answer the final clue. Right adds the wager, wrong subtracts it.
+
+### Single-screen mode
+No phones. The laptop is both TV and host. Teams answer out loud, and the host marks who got it right. This is what Phase 1 builds, and what the offline download plays.
+
+### Engine (`src/engine/`)
+- `game.ts`: a pure reducer, `reduce(state, action, now)`. Phases: lobby, board, clue, reveal, scores, final wager, final clue, final reveal, done. The timer is stored as an `endsAt` time, and actions pass in `now`, so tests control the clock.
+- Scores are derived from the judged results, not stored. Changing a judgment later just changes the total.
+- `match.ts`: normalizes answers (case, punctuation, "what is", "the") and allows a small typo distance. It only suggests. The host decides.
+
+### Rooms (Phase 4)
+- API Gateway WebSocket API with a Lambda per message. The room's game state lives in DynamoDB, and the Lambda runs the same engine reducer, then pushes the new state to every device.
+- A team is keyed by a random id the phone keeps in local storage, not by its WebSocket connection. If a phone locks or switches networks, it reconnects as the same team.
+- Each device gets only what it's allowed to see. The TV and teams never receive an answer before the reveal.
+
+## 5. Architecture
 
 ```
 shampoe.com (personal-website repo)
@@ -38,93 +118,54 @@ shampoe.com (personal-website repo)
                                           ├─ /*      ▶ S3 (React app build)
                                           └─ /api/*  ▶ Lambda function URL (api)
 
-Phones and host screen ──wss──▶ API Gateway WebSocket API ▶ Lambda (rooms)
+TV, host, and team phones ──wss──▶ API Gateway WebSocket API ▶ Lambda (rooms)
 
 api Lambda ──▶ Claude API (interview, clues, fact-check)
            ──▶ DynamoDB (games, interview sessions, rooms)
            ──▶ SNS topic ──▶ email to me when a game is created
 ```
 
-- **TypeScript everywhere.** The pure engine in `src/engine/` is shared by the app and both Lambdas.
-- **Lambda function URL for the API, not API Gateway HTTP API.** Writing a full board with web searches can take over a minute. API Gateway HTTP APIs cut requests off at 30 seconds. Function URLs allow up to 15 minutes and can stream responses, so the chat can show text as it's written. CloudFront fronts the URL with origin access control so it isn't public.
-- **WebSocket API for rooms.** The server has to push to every phone at once ("clue open", "time's up", "answers revealed"). API Gateway WebSocket APIs hold the connections, and a Lambda handles each message. Phones connect straight to the `wss://` URL.
+- **TypeScript everywhere.** React + Vite app, Node Lambdas, CDK in TypeScript. The engine is shared by the app and both Lambdas.
+- **Lambda function URL for the API, not API Gateway HTTP API.** Writing a board with web searches can take over a minute. HTTP APIs cut requests off at 30 seconds. Function URLs allow up to 15 minutes and can stream responses. CloudFront fronts the URL with origin access control.
 - **Secrets in SSM Parameter Store** as SecureStrings, created by hand: `/guest-of-honor/anthropic-api-key` and `/guest-of-honor/password`.
 - **Owner email for SNS** is passed at deploy time (`-c notifyEmail=...`) so it never lands in the public repo.
+- **AWS cost** should stay at or near zero: S3, CloudFront, Lambda, DynamoDB on-demand, SNS email, and SSM standard parameters are all tiny at this scale. A 10-team, 1-hour game is a few thousand WebSocket messages, a fraction of a cent.
 
-## 4. Data (one DynamoDB table, on-demand)
+## 6. Data (one DynamoDB table, on-demand)
 
 | pk | sk | What | Public? |
 |---|---|---|---|
-| `GAME#<id>` | `META` | Title, honoree first name, visibility, created time, board (categories, clues, answers, sources) | Board only, through its link or the gallery |
+| `GAME#<id>` | `META` | Title, honoree, visibility, created time, board | Board only, through its link or the gallery |
 | `SESSION#<id>` | `CHAT` | Interview transcript | Never. Expires after 30 days. |
-| `ROOM#<code>` | `STATE` | Game id, current clue, timer end, scores, host connection | Expires after 1 day |
-| `ROOM#<code>` | `TEAM#<teamId>` | Team name, current connection, answer for the open clue | Expires after 1 day |
-
-- A team is keyed by a random id the phone keeps in local storage, not by its connection. If a phone locks or drops wifi, it reconnects as the same team.
+| `ROOM#<code>` | `STATE` | Game id, engine state, TV and host connections | Expires after 1 day |
+| `ROOM#<code>` | `TEAM#<teamId>` | Team name, current connection | Expires after 1 day |
 
 - Game ids are long and random, so unlisted links can't be guessed.
-- A GSI on created time powers the gallery and my "what's been made" view.
-- I can see every game, including unlisted ones. The create screen says so in plain words.
-
-## 5. Agent design
-
-This is the main thing I'm here to learn.
-
-| Step | Pattern | Details |
-|---|---|---|
-| Interview | Conversational agent | System prompt gives it a goal (find 6 rich, specific themes) and a sense of when it's done. When ready, it calls a `propose_categories` tool, and the UI renders those as editable cards. |
-| Clues | Workflow, one call per category, run in parallel | Each call gets the category, the honoree context, and the crowd (difficulty, tone). It uses the `web_search` server tool to check facts and returns clues through a strict `write_clues` tool schema: value, clue, answer, source URL. |
-| Re-roll | Single call | Same schema for one clue, told which clues already exist so it doesn't repeat. |
-| Pencil | No LLM | Plain editing. |
-| Answer matching | Pure code | Normalized fuzzy match in the engine suggests right or wrong. The host decides. |
-
-- **Model:** `claude-sonnet-5-5` with adaptive thinking. Effort `low` for the interview chat and `medium` for clue writing. Server-side refusal fallbacks on.
-- **Tools come back as structured data.** That's how the app trusts the board shape without parsing prose.
-- **Fact-checking is the main risk.** A wrong answer in front of a room ruins the moment. Every clue needs a source, and the editor shows it.
-
-### Access and limits
-- Anyone can browse the gallery and play any game they have a link to.
-- Creating or re-rolling needs the shared password. The api Lambda checks it against SSM before calling Claude.
-- A daily cap (a counter row in DynamoDB) limits how many games can be made, even with the password.
-
-## 6. Cost
-
-**Claude, per game (Sonnet 5.5: $2 input / $10 output per million tokens; web search $10 per 1,000):**
-
-| Step | Tokens | Searches | Cost |
-|---|---|---|---|
-| Interview, about 10 turns | about 40K in, 5K out | 0 | about $0.13 (less with prompt caching) |
-| Clues, 6 categories + final | about 10K in, 12K out (with thinking) | 0 | about $0.14 |
-| Fact-check | about 150K to 250K in from search results | about 31 | $0.31 searches + $0.30 to $0.50 tokens |
-| **Total** | | | **about $0.90 to $1.10 per game** |
-
-Fact-checking is most of the cost. To cut it further, search only for clues the model flags as unsure. At 10 games a month that's about $10. The same game on Opus 5.5 would be about $1.50 to $2.00.
-
-**AWS:** S3, CloudFront, Lambda, DynamoDB on-demand, SNS email, and SSM standard parameters should all stay at or near zero at this scale. API Gateway WebSocket charges per message and per connection-minute. A 10-person, 1-hour game is a few thousand messages, which is fractions of a cent.
+- A GSI on created time powers the gallery and my "what's been made" script.
 
 ## 7. Phases
 
-1. **Engine and local play.** Board types, scoring, timer and round state machine, answer matching, all with tests. A single-screen host view that plays a hand-written sample board. No backend.
-2. **Agent in the terminal.** A local script that runs the interview and writes a board JSON. Learn the Claude API and tool use before adding infra.
-3. **Backend and editor.** CDK stack (S3, CloudFront, api Lambda, DynamoDB, SNS, SSM), password gate, the chat UI, the editor with re-roll and pencil, unlisted links, the email on create.
-4. **Rooms.** WebSocket API, phone join with QR code and team names, timer with host end-early, reveal and judge, running scoreboard.
+1. **Board and engine, single-screen play.** Board type and validator, game reducer, answer matching, all tested. A single-screen app that plays a hand-written sample board. No backend. *Done 2026-11-01.*
+2. **Builder agent in the terminal.** A local script that runs the interview and writes a board JSON. Learn the Claude API and tool use before adding infra.
+3. **Builder on the web.** CDK stack (S3, CloudFront, api Lambda, DynamoDB, SNS, SSM), password gate, chat UI, editor with re-roll and pencil, unlisted links, the email on create, the owner script.
+4. **Rooms.** WebSocket API, start screen with QR code, host claim, team join and names, timer with end early, reveal and judge, running scoreboard.
 5. **Ship.** Gallery, quiet offline download, personal-website pages and workshop row.
 
 ## 8. Decided
 
 - **2026-11-01** Name: Guest of Honor. Repo, folder, and site path are `guest-of-honor`.
 - **2026-11-01** Themed around the person, with real trivia. Not a quiz about the person.
+- **2026-11-01** Two halves, builder and gameplay, joined only by the board format.
 - **2026-11-01** Anyone can browse. Creating needs a shared password.
 - **2026-11-01** Games are unlisted by default, gallery is opt-in, and offline download is a quiet option. Interview transcripts are never public.
-- **2026-11-01** Multiplayer is a timed team answer, not a buzzer race.
-- **2026-11-01** Email me through SNS every time a game is created.
+- **2026-11-01** Email me through SNS every time a game is created. Owner view starts as a script.
 - **2026-11-01** Creators can re-roll any clue or edit it by hand.
-- **2026-11-01** One phone per team. Teams name themselves when they join.
-- **2026-11-01** A round ends on the timer, when every team has answered, or when the host ends it early. A running scoreboard shows between clues.
-- **2026-11-01** Sonnet 5.5 for every agent step, about $1 per game. Opus isn't needed for this.
+- **2026-11-01** Sonnet 5.5 for every agent step, about $1 per game.
+- **2026-11-01** Rooms have a display-only TV, one host phone with the answers and controls, and one phone per team. Teams name themselves. The start screen shows a QR code.
+- **2026-11-01** Timed team answers, not a buzzer race. A round ends on the timer, when every team has answered, or when the host ends it. A running scoreboard shows between clues.
+- **2026-11-01** Stack: React + Vite + TypeScript, vitest for the engine, Node Lambdas, CDK in TypeScript.
 
 ## 9. Open decisions
 
-- **Stack approval.** React + Vite + TypeScript app, Node Lambdas, CDK in TypeScript. New dependencies: `react`, `vite`, `@anthropic-ai/sdk`, CDK libraries, and `vitest` for tests.
-- **My owner view.** A script that lists recent games from DynamoDB, or a password-protected admin page?
+- **QR code library.** Phase 4 needs one to draw the code (e.g. the `qrcode` npm package). Ask before adding.
 - **Twists.** Ideas: a hidden "Honor Roll" tile worth double that the honoree picks, a final round that *is* personal trivia, an end screen that reveals how each category tied back to them.
