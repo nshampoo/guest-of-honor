@@ -147,7 +147,7 @@ api Lambda ──▶ Claude API (interview, clues, fact-check)
 ## 7. Phases
 
 1. **Board and engine, single-screen play.** Board type and validator, game reducer, answer matching, all tested. A single-screen app that plays a hand-written sample board. No backend. *Done 2026-11-01.*
-2. **Rooms, locally.** Pure room logic (who's connected, what each device may see), a local WebSocket dev server, and the TV, host, and team screens. Start screen with QR code, host claim, team names, timer with end early, reveal and judge, running scoreboard. Test with real phones on home wifi.
+2. **Rooms, locally.** Pure room logic (who's connected, what each device may see), a local WebSocket dev server, and the TV, host, and team screens. Start screen with QR code, host claim, team names, timer with end early, reveal and judge, running scoreboard. Test with real phones on home wifi. *Built 2026-11-01 and verified with a scripted four-device game in headless Chrome. Not yet tried on real phones.*
 3. **Rooms on AWS.** CDK stack: S3 and CloudFront for the app, API Gateway WebSocket API, rooms Lambda, DynamoDB.
 4. **Builder agent in the terminal.** A local script that runs the interview and writes a board JSON. Learn the Claude API and tool use before adding more infra.
 5. **Builder on the web.** api Lambda, password gate, chat UI, editor with re-roll and pencil, unlisted links, SNS email on create, the owner script.

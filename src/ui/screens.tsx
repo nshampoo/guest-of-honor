@@ -1,9 +1,12 @@
 import { useState } from "react";
 import { type Action, type GameState, clueAt, maxWager, scores } from "../engine/game";
+import { randomId } from "./ids";
 
-type Props = { state: GameState; act: (a: Action) => void; now: number };
+// local: one screen does everything. tv: display only. host: controls and answers.
+export type Mode = "local" | "tv" | "host";
+type Props = { state: GameState; act: (a: Action) => void; now: number; mode: Mode; ready?: string[] };
 
-function Scoreboard({ state, big = false }: { state: GameState; big?: boolean }) {
+export function Scoreboard({ state, big = false }: { state: GameState; big?: boolean }) {
   const totals = scores(state);
   const teams = big ? [...state.teams].sort((a, b) => totals[b.id] - totals[a.id]) : state.teams;
   return (
@@ -18,11 +21,24 @@ function Scoreboard({ state, big = false }: { state: GameState; big?: boolean })
   );
 }
 
-export function LobbyScreen({ state, act }: Props) {
+export function TimerSelect({ state, act }: Pick<Props, "state" | "act">) {
+  return (
+    <label>
+      Seconds per clue{" "}
+      <select value={state.timerMs / 1000} onChange={(e) => act({ type: "setTimer", ms: Number(e.target.value) * 1000 })}>
+        {[15, 30, 45, 60].map((s) => (
+          <option key={s}>{s}</option>
+        ))}
+      </select>
+    </label>
+  );
+}
+
+export function LocalLobby({ state, act }: Props) {
   const [name, setName] = useState("");
   const add = (e: React.SubmitEvent<HTMLFormElement>) => {
     e.preventDefault();
-    act({ type: "addTeam", id: crypto.randomUUID(), name });
+    act({ type: "addTeam", id: randomId(), name });
     setName("");
   };
   return (
@@ -43,14 +59,7 @@ export function LobbyScreen({ state, act }: Props) {
           </li>
         ))}
       </ul>
-      <label>
-        Seconds per clue{" "}
-        <select value={state.timerMs / 1000} onChange={(e) => act({ type: "setTimer", ms: Number(e.target.value) * 1000 })}>
-          {[15, 30, 45, 60].map((s) => (
-            <option key={s}>{s}</option>
-          ))}
-        </select>
-      </label>
+      <TimerSelect state={state} act={act} />
       <button className="primary" disabled={state.teams.length === 0} onClick={() => act({ type: "start" })}>
         Start game
       </button>
@@ -58,7 +67,7 @@ export function LobbyScreen({ state, act }: Props) {
   );
 }
 
-export function BoardScreen({ state, act }: Props) {
+export function BoardScreen({ state, act, mode }: Props) {
   return (
     <main>
       <div className="grid">
@@ -68,7 +77,12 @@ export function BoardScreen({ state, act }: Props) {
             {cat.clues.map((clue, r) => {
               const used = state.results[`${c}-${r}`] !== undefined;
               return (
-                <button key={r} className="tile" disabled={used} onClick={() => act({ type: "openClue", cat: c, row: r })}>
+                <button
+                  key={r}
+                  className="tile"
+                  disabled={used || mode === "tv"}
+                  onClick={() => act({ type: "openClue", cat: c, row: r })}
+                >
                   {used ? "" : clue.value}
                 </button>
               );
@@ -77,16 +91,21 @@ export function BoardScreen({ state, act }: Props) {
         ))}
       </div>
       <Scoreboard state={state} />
-      <button className="link" onClick={() => act({ type: "goToFinal" })}>
-        Skip to final round
-      </button>
+      {mode === "tv" ? (
+        <p className="muted">The host picks the next clue.</p>
+      ) : (
+        <button className="link" onClick={() => act({ type: "goToFinal" })}>
+          Skip to final round
+        </button>
+      )}
     </main>
   );
 }
 
-export function ClueScreen({ state, act, now }: Props) {
+export function ClueScreen({ state, act, now, mode, ready = [] }: Props) {
   const isFinal = state.phase === "finalClue";
   const clue = isFinal ? state.board.final : clueAt(state.board, state.current!);
+  const result = isFinal ? state.final! : state.results[state.current!];
   const seconds = Math.max(0, Math.ceil((state.endsAt! - now) / 1000));
   return (
     <main className="clue">
@@ -96,14 +115,34 @@ export function ClueScreen({ state, act, now }: Props) {
       </p>
       <h1>{clue.clue}</h1>
       <p className="timer">{seconds}</p>
-      <button className="primary" onClick={() => act({ type: "endRound" })}>
-        End round
-      </button>
+      {mode === "tv" && (
+        <p className="muted">
+          {ready.length} of {state.teams.length} teams have answered
+        </p>
+      )}
+      {mode === "host" && (
+        <>
+          <p className="answer">Answer: {clue.answer}</p>
+          <ul className="judging">
+            {state.teams.map((t) => (
+              <li key={t.id}>
+                <span>{t.name}</span>
+                <em>{result.answers[t.id] ?? "…"}</em>
+              </li>
+            ))}
+          </ul>
+        </>
+      )}
+      {mode !== "tv" && (
+        <button className="primary" onClick={() => act({ type: "endRound" })}>
+          End round
+        </button>
+      )}
     </main>
   );
 }
 
-export function RevealScreen({ state, act }: Props) {
+export function RevealScreen({ state, act, mode }: Props) {
   const isFinal = state.phase === "finalReveal";
   const clue = isFinal ? state.board.final : clueAt(state.board, state.current!);
   const result = isFinal ? state.final! : state.results[state.current!];
@@ -117,51 +156,61 @@ export function RevealScreen({ state, act }: Props) {
         </a>
       )}
       <ul className="judging">
-        {state.teams.map((t) => (
-          <li key={t.id}>
-            <span>
-              {t.name}
-              {result.answers[t.id] && <em> "{result.answers[t.id]}"</em>}
-              {isFinal && <small> wagered {state.wagers[t.id] ?? 0}</small>}
-            </span>
-            <button
-              className={result.correct[t.id] ? "right" : "wrong"}
-              onClick={() => act({ type: "judge", teamId: t.id, correct: !result.correct[t.id] })}
-            >
-              {result.correct[t.id] ? "Right" : "Wrong"}
-            </button>
-          </li>
-        ))}
+        {state.teams.map((t) => {
+          const right = result.correct[t.id];
+          return (
+            <li key={t.id}>
+              <span>
+                {t.name}
+                {result.answers[t.id] && <em> "{result.answers[t.id]}"</em>}
+                {isFinal && <small> wagered {state.wagers[t.id] ?? 0}</small>}
+              </span>
+              {mode === "tv" ? (
+                <span className={`badge ${right ? "right" : "wrong"}`}>{right ? "Right" : "Wrong"}</span>
+              ) : (
+                <button className={right ? "right" : "wrong"} onClick={() => act({ type: "judge", teamId: t.id, correct: !right })}>
+                  {right ? "Right" : "Wrong"}
+                </button>
+              )}
+            </li>
+          );
+        })}
       </ul>
-      <button className="primary" onClick={() => act({ type: "next" })}>
-        {isFinal ? "Final scores" : "Scores"}
-      </button>
+      {mode !== "tv" && (
+        <button className="primary" onClick={() => act({ type: "next" })}>
+          {isFinal ? "Final scores" : "Scores"}
+        </button>
+      )}
     </main>
   );
 }
 
-export function ScoresScreen({ state, act }: Props) {
+export function ScoresScreen({ state, act, mode }: Props) {
   return (
     <main className="clue">
       <h1>Scoreboard</h1>
       <Scoreboard state={state} big />
-      <details>
-        <summary>Adjust scores</summary>
-        {state.teams.map((t) => (
-          <p key={t.id}>
-            {t.name} <button onClick={() => act({ type: "adjust", teamId: t.id, delta: -100 })}>−100</button>{" "}
-            <button onClick={() => act({ type: "adjust", teamId: t.id, delta: 100 })}>+100</button>
-          </p>
-        ))}
-      </details>
-      <button className="primary" onClick={() => act({ type: "next" })}>
-        Back to the board
-      </button>
+      {mode !== "tv" && (
+        <>
+          <details>
+            <summary>Adjust scores</summary>
+            {state.teams.map((t) => (
+              <p key={t.id}>
+                {t.name} <button onClick={() => act({ type: "adjust", teamId: t.id, delta: -100 })}>−100</button>{" "}
+                <button onClick={() => act({ type: "adjust", teamId: t.id, delta: 100 })}>+100</button>
+              </p>
+            ))}
+          </details>
+          <button className="primary" onClick={() => act({ type: "next" })}>
+            Back to the board
+          </button>
+        </>
+      )}
     </main>
   );
 }
 
-export function FinalWagerScreen({ state, act }: Props) {
+export function FinalWagerScreen({ state, act, mode, ready = [] }: Props) {
   return (
     <main className="clue">
       <p className="eyebrow">Final round</p>
@@ -173,20 +222,28 @@ export function FinalWagerScreen({ state, act }: Props) {
             <span>
               {t.name} <small>(up to {maxWager(state, t.id)})</small>
             </span>
-            <input
-              type="number"
-              min={0}
-              max={maxWager(state, t.id)}
-              step={100}
-              value={state.wagers[t.id] ?? 0}
-              onChange={(e) => act({ type: "wager", teamId: t.id, amount: Number(e.target.value) })}
-            />
+            {mode === "local" ? (
+              <input
+                type="number"
+                min={0}
+                max={maxWager(state, t.id)}
+                step={100}
+                value={state.wagers[t.id] ?? 0}
+                onChange={(e) => act({ type: "wager", teamId: t.id, amount: Number(e.target.value) })}
+              />
+            ) : (
+              <span className="muted">
+                {mode === "host" && state.wagers[t.id] !== undefined ? state.wagers[t.id] : ready.includes(t.id) ? "Locked in" : "Thinking…"}
+              </span>
+            )}
           </li>
         ))}
       </ul>
-      <button className="primary" onClick={() => act({ type: "endRound" })}>
-        Show the final clue
-      </button>
+      {mode !== "tv" && (
+        <button className="primary" onClick={() => act({ type: "endRound" })}>
+          Show the final clue
+        </button>
+      )}
     </main>
   );
 }
@@ -202,4 +259,25 @@ export function DoneScreen({ state }: Props) {
       <Scoreboard state={state} big />
     </main>
   );
+}
+
+export function GameScreen(props: Props) {
+  switch (props.state.phase) {
+    case "lobby":
+      return <LocalLobby {...props} />;
+    case "board":
+      return <BoardScreen {...props} />;
+    case "clue":
+    case "finalClue":
+      return <ClueScreen {...props} />;
+    case "reveal":
+    case "finalReveal":
+      return <RevealScreen {...props} />;
+    case "scores":
+      return <ScoresScreen {...props} />;
+    case "finalWager":
+      return <FinalWagerScreen {...props} />;
+    case "done":
+      return <DoneScreen {...props} />;
+  }
 }

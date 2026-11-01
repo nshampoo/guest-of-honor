@@ -96,7 +96,7 @@ describe("what each device sees", () => {
     expect(v.game.board.categories[3].clues[4].answer).toBe("");
     expect(v.game.board.final.clue).toBe("");
     expect(v.game.results["0-0"].answers).toEqual({});
-    expect(v.answered).toEqual(["team-a"]);
+    expect(v.ready).toEqual(["team-a"]);
   });
 
   it("a team sees only its own answer", () => {
@@ -124,6 +124,7 @@ describe("what each device sees", () => {
     );
     expect(viewFor(room, "a", 0)!.game.wagers).toEqual({ "team-a": 300 });
     expect(viewFor(room, "tv", 0)!.game.wagers).toEqual({});
+    expect(viewFor(room, "tv", 0)!.ready).toEqual(["team-a", "team-b"]);
     expect(viewFor(room, "a", 0)!.game.board.final.category).toBe("Running Firsts");
     expect(viewFor(room, "a", 0)!.game.board.final.clue).toBe("");
   });

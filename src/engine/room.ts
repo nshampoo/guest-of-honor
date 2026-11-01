@@ -18,7 +18,7 @@ export type View = {
   you: string;
   hostClaimed: boolean;
   connected: string[]; // team ids with a live connection
-  answered: string[]; // team ids that have answered the open clue
+  ready: string[]; // team ids that have answered the open clue, or wagered in the final
   serverNow: number;
   game: GameState; // redacted for everyone but the host
 };
@@ -117,7 +117,7 @@ export function viewFor(room: Room, connId: string, now: number): View | null {
     you: conn.id,
     hostClaimed: room.hostId !== null,
     connected: [...new Set(teamConns.map((c) => c.id))],
-    answered: open ? Object.keys(open.answers) : [],
+    ready: open ? Object.keys(open.answers) : g.phase === "finalWager" ? Object.keys(g.wagers) : [],
     serverNow: now,
     game: conn.role === "host" ? g : redact(g, conn.role === "team" ? conn.id : null),
   };

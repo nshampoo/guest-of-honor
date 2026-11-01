@@ -58,3 +58,29 @@ a { color: var(--accent); }
 @media (max-width: 700px) {
   .grid { grid-template-columns: repeat(3, 1fr); }
 }
+
+.muted { color: var(--muted); margin: 0; }
+a.primary { text-decoration: none; display: inline-block; border-radius: 8px; }
+.answer { margin: 0; font-size: 20px; color: var(--accent); }
+.badge { display: inline-block; padding: 8px 14px; border-radius: 8px; margin: 0; align-self: flex-start; }
+.banner { background: var(--wrong); padding: 10px 14px; border-radius: 8px; margin: 0; }
+.banner.top { position: sticky; top: 0; z-index: 1; border-radius: 0; text-align: center; }
+.stack { display: flex; flex-direction: column; gap: 10px; }
+.stack .primary { align-self: stretch; }
+
+.tv-lobby { display: grid; grid-template-columns: 1fr auto; gap: 48px; align-items: center; min-height: 90vh; }
+.tv-lobby > div { display: flex; flex-direction: column; gap: 16px; }
+.qr { display: flex; flex-direction: column; align-items: center; gap: 12px; text-align: center; }
+.qr img { width: min(360px, 70vw); border-radius: 12px; }
+.qr strong { color: var(--accent); letter-spacing: 0.15em; font-size: 28px; }
+
+.phone { max-width: 480px; }
+.phone h1 { font-size: 28px; }
+.phone h2 { margin: 0; font-size: 24px; line-height: 1.25; }
+.phone-head { display: flex; justify-content: space-between; background: var(--panel); padding: 10px 14px; border-radius: 8px; }
+.phone-head span { color: var(--accent); font-weight: 700; }
+.timer.small { font-size: 40px; }
+
+@media (max-width: 700px) {
+  .tv-lobby { grid-template-columns: 1fr; }
+}
