@@ -162,7 +162,6 @@ api Lambda ──▶ Claude API (interview, clues, fact-check)
 - [x] `CONN#<connId>` items map a connection to its room, for `$disconnect`. Connections that are gone (410) get dropped from the room.
 - [x] Least-privilege IAM: the Lambda can read and write only this table and post only to this API.
 - [x] Verify: the four-device script passes against the CloudFront URL (43 checks, 2026-11-01). Still to do: a real game with phones on cellular.
-- [ ] Add to shampoe.com: `apps` entry in personal-website `infra/bin/infra.ts`. Phones connect to the WebSocket URL directly, not through the proxy.
 
 ### 4. Builder agent in the terminal
 - [ ] `@anthropic-ai/sdk`, API key via `ant auth login` or gitignored `local/`.
@@ -182,7 +181,7 @@ api Lambda ──▶ Claude API (interview, clues, fact-check)
 
 ### 6. Ship
 - [ ] Gallery page and the quiet offline download.
-- [ ] personal-website: story page at `site/guest-of-honor/`, `/open/` page, workshop row with `data-repo`, deploy.
+- [ ] personal-website: `apps` entry in `infra/bin/infra.ts` (phones still connect to the WebSocket URL directly), story page at `site/guest-of-honor/`, `/open/` page, workshop row with `data-repo`, deploy.
 
 ## 8. Decided
 
@@ -199,6 +198,7 @@ api Lambda ──▶ Claude API (interview, clues, fact-check)
 - **2026-11-01** Stack: React + Vite + TypeScript, vitest for the engine, Node Lambdas, CDK in TypeScript.
 - **2026-11-01** Build the multiplayer game before the builder.
 - **2026-11-01** Longer clocks: 60 seconds by default, 2 minutes for the final. The host can stop the timer, and then only the host ends the round.
+- **2026-11-01** Hook up shampoe.com after the builder works, not before.
 - **2026-11-01** The builder writes hard clues by default. The game is about teams talking it through.
 
 ## 9. Open decisions
