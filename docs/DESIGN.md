@@ -19,11 +19,12 @@ Hosted at `shampoe.com/guest-of-honor/`. The first users are me and my friends.
 
 **Playing one**
 1. The host opens the game on a TV or laptop and starts a room. The screen shows a room code and a QR code.
-2. Players join on their phones and pick a team.
+2. Each team joins on one phone and types a team name. One device is one team.
 3. The host picks a tile. The clue shows on the TV and on phones, and a timer starts (30 seconds by default).
-4. Each team talks it over and submits one answer before time runs out. This is not a race. Nobody buzzes in first.
+4. Each team talks it over and submits one answer. This is not a race. Nobody buzzes in first. The round ends when the timer runs out, when every team has answered, or when the host ends it early.
 5. The TV reveals every team's answer next to the correct one. The engine suggests which answers match, and the host taps to confirm. Every correct team scores. Wrong answers cost nothing.
-6. Final round: teams wager, then answer.
+6. The TV shows the running scoreboard, then goes back to the board.
+7. Final round: teams wager, then answer.
 
 Without a room, the host can still run the game on one screen and judge answers out loud.
 
@@ -57,7 +58,9 @@ api Lambda ──▶ Claude API (interview, clues, fact-check)
 | `GAME#<id>` | `META` | Title, honoree first name, visibility, created time, board (categories, clues, answers, sources) | Board only, through its link or the gallery |
 | `SESSION#<id>` | `CHAT` | Interview transcript | Never. Expires after 30 days. |
 | `ROOM#<code>` | `STATE` | Game id, current clue, timer end, scores, host connection | Expires after 1 day |
-| `ROOM#<code>` | `CONN#<connId>` | Player name and team | Expires after 1 day |
+| `ROOM#<code>` | `TEAM#<teamId>` | Team name, current connection, answer for the open clue | Expires after 1 day |
+
+- A team is keyed by a random id the phone keeps in local storage, not by its connection. If a phone locks or drops wifi, it reconnects as the same team.
 
 - Game ids are long and random, so unlisted links can't be guessed.
 - A GSI on created time powers the gallery and my "what's been made" view.
@@ -75,7 +78,7 @@ This is the main thing I'm here to learn.
 | Pencil | No LLM | Plain editing. |
 | Answer matching | Pure code | Normalized fuzzy match in the engine suggests right or wrong. The host decides. |
 
-- **Model:** `claude-opus-5-5` with adaptive thinking. Effort `low` for the interview chat and `medium` for clue writing. Server-side refusal fallbacks on.
+- **Model:** `claude-sonnet-5-5` with adaptive thinking. Effort `low` for the interview chat and `medium` for clue writing. Server-side refusal fallbacks on.
 - **Tools come back as structured data.** That's how the app trusts the board shape without parsing prose.
 - **Fact-checking is the main risk.** A wrong answer in front of a room ruins the moment. Every clue needs a source, and the editor shows it.
 
@@ -86,16 +89,16 @@ This is the main thing I'm here to learn.
 
 ## 6. Cost
 
-**Claude, per game (Opus 5.5: $4 input / $20 output per million tokens; web search $10 per 1,000):**
+**Claude, per game (Sonnet 5.5: $2 input / $10 output per million tokens; web search $10 per 1,000):**
 
 | Step | Tokens | Searches | Cost |
 |---|---|---|---|
-| Interview, about 10 turns | about 40K in, 5K out | 0 | about $0.25 (less with prompt caching) |
-| Clues, 6 categories + final | about 10K in, 12K out (with thinking) | 0 | about $0.28 |
-| Fact-check | about 150K to 250K in from search results | about 31 | $0.30 searches + $0.60 to $1.00 tokens |
-| **Total** | | | **about $1.50 to $2.00 per game** |
+| Interview, about 10 turns | about 40K in, 5K out | 0 | about $0.13 (less with prompt caching) |
+| Clues, 6 categories + final | about 10K in, 12K out (with thinking) | 0 | about $0.14 |
+| Fact-check | about 150K to 250K in from search results | about 31 | $0.31 searches + $0.30 to $0.50 tokens |
+| **Total** | | | **about $0.90 to $1.10 per game** |
 
-Fact-checking is most of the cost. Ways to cut it if needed: run clue writing on Sonnet 5.5 (half the price), or search only for clues the model flags as unsure. At 10 games a month that's about $15 to $20.
+Fact-checking is most of the cost. To cut it further, search only for clues the model flags as unsure. At 10 games a month that's about $10. The same game on Opus 5.5 would be about $1.50 to $2.00.
 
 **AWS:** S3, CloudFront, Lambda, DynamoDB on-demand, SNS email, and SSM standard parameters should all stay at or near zero at this scale. API Gateway WebSocket charges per message and per connection-minute. A 10-person, 1-hour game is a few thousand messages, which is fractions of a cent.
 
@@ -104,7 +107,7 @@ Fact-checking is most of the cost. Ways to cut it if needed: run clue writing on
 1. **Engine and local play.** Board types, scoring, timer and round state machine, answer matching, all with tests. A single-screen host view that plays a hand-written sample board. No backend.
 2. **Agent in the terminal.** A local script that runs the interview and writes a board JSON. Learn the Claude API and tool use before adding infra.
 3. **Backend and editor.** CDK stack (S3, CloudFront, api Lambda, DynamoDB, SNS, SSM), password gate, the chat UI, the editor with re-roll and pencil, unlisted links, the email on create.
-4. **Rooms.** WebSocket API, phone join with QR code, teams, timer, reveal and judge.
+4. **Rooms.** WebSocket API, phone join with QR code and team names, timer with host end-early, reveal and judge, running scoreboard.
 5. **Ship.** Gallery, quiet offline download, personal-website pages and workshop row.
 
 ## 8. Decided
@@ -116,12 +119,12 @@ Fact-checking is most of the cost. Ways to cut it if needed: run clue writing on
 - **2026-11-01** Multiplayer is a timed team answer, not a buzzer race.
 - **2026-11-01** Email me through SNS every time a game is created.
 - **2026-11-01** Creators can re-roll any clue or edit it by hand.
+- **2026-11-01** One phone per team. Teams name themselves when they join.
+- **2026-11-01** A round ends on the timer, when every team has answered, or when the host ends it early. A running scoreboard shows between clues.
+- **2026-11-01** Sonnet 5.5 for every agent step, about $1 per game. Opus isn't needed for this.
 
 ## 9. Open decisions
 
 - **Stack approval.** React + Vite + TypeScript app, Node Lambdas, CDK in TypeScript. New dependencies: `react`, `vite`, `@anthropic-ai/sdk`, CDK libraries, and `vitest` for tests.
-- **Teams or solo.** Proposed: teams, with solo as a team of one.
-- **Team answer box.** One shared box where the last edit wins, or each teammate submits and the team picks one?
 - **My owner view.** A script that lists recent games from DynamoDB, or a password-protected admin page?
-- **Fact-check model.** Opus 5.5 for everything, or Sonnet 5.5 for clue writing to halve the cost?
 - **Twists.** Ideas: a hidden "Honor Roll" tile worth double that the honoree picks, a final round that *is* personal trivia, an end screen that reveals how each category tied back to them.
