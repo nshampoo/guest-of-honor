@@ -58,6 +58,8 @@ describe("permissions", () => {
   it("only the host can end a round or call time", () => {
     const room = run([["h", { t: "act", action: { type: "openClue", cat: 0, row: 0 } }]], run(setup));
     expect(handle(room, "a", { t: "act", action: { type: "endRound" } }, 0).error).toBe("You can't do that.");
+    expect(handle(room, "a", { t: "act", action: { type: "stopTimer" } }, 0).error).toBe("You can't do that.");
+    expect(handle(room, "h", { t: "act", action: { type: "stopTimer" } }, 0).room.game.endsAt).toBeNull();
     expect(handle(room, "tv", { t: "act", action: { type: "tick" } }, 99_000).error).toBe("You can't do that.");
     expect(handle(room, "h", { t: "act", action: { type: "tick" } }, 99_000).room.game.phase).toBe("reveal");
   });

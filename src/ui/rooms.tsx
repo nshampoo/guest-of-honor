@@ -90,7 +90,7 @@ function HostRoom({ room }: { room: RoomHandle }) {
   // A Lambda only runs when a message arrives, so the host's phone tells the server time is up.
   const lastTick = useRef(0);
   useEffect(() => {
-    if (timed && now >= g.endsAt! && Date.now() - lastTick.current > 500) {
+    if (timed && g.endsAt !== null && now >= g.endsAt && Date.now() - lastTick.current > 500) {
       lastTick.current = Date.now();
       act({ type: "tick" });
     }

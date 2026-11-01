@@ -43,7 +43,7 @@ This is the main thing I'm here to learn.
 | Step | Pattern | Details |
 |---|---|---|
 | Interview | Conversational agent | System prompt gives it a goal (find 6 rich, specific themes) and a sense of when it's done. When ready, it calls a `propose_categories` tool, and the UI renders those as editable cards. |
-| Clues | Workflow, one call per category, run in parallel | Each call gets the category, the honoree context, and the crowd (difficulty, tone). It uses the `web_search` server tool to check facts and returns clues through a strict `write_clues` tool schema. |
+| Clues | Workflow, one call per category, run in parallel | Each call gets the category, the honoree context, and the crowd (difficulty, tone). Default to hard clues that reward a team talking it through, not instant recall. It uses the `web_search` server tool to check facts and returns clues through a strict `write_clues` tool schema. |
 | Re-roll | Single call | Same schema for one clue, told which clues already exist so it doesn't repeat. |
 | Pencil | No LLM | Plain editing. |
 
@@ -88,12 +88,13 @@ The host runs the game and doesn't play, since they can see the answers.
 3. The host taps start.
 
 ### A round
-1. The host picks a tile. The clue shows on the TV and team phones, and a timer starts (30 seconds by default).
-2. Teams talk it over and submit one answer. This is not a race.
+1. The host picks a tile. The clue shows on the TV and team phones, and a timer starts (60 seconds by default; 30, 90, or 120 can be picked in the lobby). The final clue gets 2 minutes.
+2. Teams talk it over and submit one answer, which they can change. This is not a race.
 3. The round ends when the timer runs out, every team has answered, or the host ends it early.
-4. The TV reveals every team's answer next to the correct one. The engine suggests which answers match, and the host confirms. Every correct team scores the clue's value. Wrong answers cost nothing.
-5. The TV shows the running scoreboard, then the board.
-6. After the last tile: final round. Teams wager up to their score, then answer the final clue. Right adds the wager, wrong subtracts it.
+4. The host can **stop the timer**. Then there's no time limit, and only the host ends the round, even if every team has answered, so teams can keep debating.
+5. The TV reveals every team's answer next to the correct one. The engine suggests which answers match, and the host confirms. Every correct team scores the clue's value. Wrong answers cost nothing.
+6. The TV shows the running scoreboard, then the board.
+7. After the last tile: final round. Teams wager up to their score, then answer the final clue. Right adds the wager, wrong subtracts it.
 
 ### Single-screen mode
 No phones. The laptop is both TV and host. Teams answer out loud, and the host marks who got it right. This is what Phase 1 builds, and what the offline download plays.
@@ -167,6 +168,8 @@ api Lambda ──▶ Claude API (interview, clues, fact-check)
 - **2026-11-01** Timed team answers, not a buzzer race. A round ends on the timer, when every team has answered, or when the host ends it. A running scoreboard shows between clues.
 - **2026-11-01** Stack: React + Vite + TypeScript, vitest for the engine, Node Lambdas, CDK in TypeScript.
 - **2026-11-01** Build the multiplayer game before the builder.
+- **2026-11-01** Longer clocks: 60 seconds by default, 2 minutes for the final. The host can stop the timer, and then only the host ends the round.
+- **2026-11-01** The builder writes hard clues by default. The game is about teams talking it through.
 
 ## 9. Open decisions
 

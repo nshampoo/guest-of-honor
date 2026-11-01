@@ -2,7 +2,7 @@ import { useState } from "react";
 import { type GameState, type Team, clueAt, maxWager, scores } from "../engine/game";
 import type { ClientMsg } from "../engine/room";
 import type { RoomHandle } from "./rooms";
-import { Scoreboard } from "./screens";
+import { Countdown, Scoreboard } from "./screens";
 import { useTicker } from "./useRoom";
 
 type Send = (msg: ClientMsg) => void;
@@ -28,7 +28,7 @@ function AnswerBox({ g, me, now, send }: { g: GameState; me: Team; now: number; 
   const clue = isFinal ? g.board.final : clueAt(g.board, g.current!);
   const locked = (isFinal ? g.final! : g.results[g.current!]).answers[me.id];
   const [text, setText] = useState("");
-  const seconds = Math.max(0, Math.ceil((g.endsAt! - now) / 1000));
+  const open = g.endsAt === null || now < g.endsAt;
   const submit = (e: React.SubmitEvent<HTMLFormElement>) => {
     e.preventDefault();
     send({ t: "act", action: { type: "submit", teamId: me.id, text: text.trim() } });
@@ -41,8 +41,9 @@ function AnswerBox({ g, me, now, send }: { g: GameState; me: Team; now: number; 
         {"value" in clue ? ` · ${clue.value}` : " · Final round"}
       </p>
       <h2>{clue.clue}</h2>
-      <p className="timer small">{seconds}</p>
-      {seconds > 0 ? (
+      <Countdown endsAt={g.endsAt} now={now} small />
+      {g.endsAt === null && <p className="muted">The host will end the round. Keep talking it over.</p>}
+      {open ? (
         <form onSubmit={submit} className="stack">
           <input value={text} onChange={(e) => setText(e.target.value)} placeholder="Your answer" maxLength={80} />
           <button className="primary" disabled={!text.trim()}>

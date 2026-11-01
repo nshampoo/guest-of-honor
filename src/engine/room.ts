@@ -26,7 +26,7 @@ export type View = {
 export type ServerMsg = { t: "view"; view: View } | { t: "error"; message: string };
 
 const HOST_ACTIONS = new Set<Action["type"]>([
-  "setTimer", "start", "removeTeam", "renameTeam", "openClue", "endRound",
+  "setTimer", "start", "removeTeam", "renameTeam", "openClue", "endRound", "stopTimer",
   "tick", "judge", "next", "goToFinal", "adjust", "wager",
 ]);
 

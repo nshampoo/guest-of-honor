@@ -36,7 +36,7 @@ describe("a round", () => {
     const s = reduce(play(twoTeams), { type: "openClue", cat: 0, row: 0 }, 1_000);
     expect(s.phase).toBe("clue");
     expect(s.current).toBe("0-0");
-    expect(s.endsAt).toBe(31_000);
+    expect(s.endsAt).toBe(61_000);
   });
 
   it("won't reopen a used clue", () => {
@@ -69,9 +69,32 @@ describe("a round", () => {
 
   it("ends when the timer runs out, and ignores late answers", () => {
     const open = play([...twoTeams, { type: "openClue", cat: 0, row: 0 }]);
-    expect(reduce(open, { type: "tick" }, 29_999)).toBe(open);
-    expect(reduce(open, { type: "submit", teamId: "a", text: "26.2" }, 30_000)).toBe(open);
-    expect(reduce(open, { type: "tick" }, 30_000).phase).toBe("reveal");
+    expect(reduce(open, { type: "tick" }, 59_999)).toBe(open);
+    expect(reduce(open, { type: "submit", teamId: "a", text: "26.2" }, 60_000)).toBe(open);
+    expect(reduce(open, { type: "tick" }, 60_000).phase).toBe("reveal");
+  });
+
+  it("with the timer stopped, keeps taking answers until the host ends the round", () => {
+    const stopped = play([...twoTeams, { type: "openClue", cat: 0, row: 0 }, { type: "stopTimer" }], undefined, 1_000);
+    expect(stopped.endsAt).toBeNull();
+    expect(reduce(stopped, { type: "tick" }, 999_999)).toBe(stopped);
+    const answered = play(
+      [
+        { type: "submit", teamId: "a", text: "13.1" },
+        { type: "submit", teamId: "b", text: "26.2" },
+        { type: "submit", teamId: "a", text: "26.2" },
+      ],
+      stopped,
+      999_999,
+    );
+    expect(answered.phase).toBe("clue");
+    expect(answered.results["0-0"].answers).toEqual({ a: "26.2", b: "26.2" });
+    expect(reduce(answered, { type: "endRound" }, 999_999).phase).toBe("reveal");
+  });
+
+  it("can't stop a timer that already ran out", () => {
+    const open = play([...twoTeams, { type: "openClue", cat: 0, row: 0 }]);
+    expect(reduce(open, { type: "stopTimer" }, 60_000)).toBe(open);
   });
 
   it("ends early when the host says so", () => {

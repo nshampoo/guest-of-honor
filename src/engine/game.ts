@@ -21,7 +21,7 @@ export type GameState = {
   timerMs: number;
   finalTimerMs: number;
   current: string | null; // clue key "cat-row" while a clue is open or revealed
-  endsAt: number | null;
+  endsAt: number | null; // null when no clue is open, or once the host stops the timer
   results: Record<string, Result>;
   wagers: Record<string, number>;
   final: Result | null;
@@ -37,6 +37,7 @@ export type Action =
   | { type: "openClue"; cat: number; row: number }
   | { type: "submit"; teamId: string; text: string }
   | { type: "tick" }
+  | { type: "stopTimer" }
   | { type: "endRound" }
   | { type: "judge"; teamId: string; correct: boolean }
   | { type: "next" }
@@ -56,8 +57,8 @@ export function newGame(board: Board): GameState {
     board,
     phase: "lobby",
     teams: [],
-    timerMs: 30_000,
-    finalTimerMs: 60_000,
+    timerMs: 60_000,
+    finalTimerMs: 120_000,
     current: null,
     endsAt: null,
     results: {},
@@ -85,7 +86,9 @@ export function scores(state: GameState): Record<string, number> {
 
 export const maxWager = (state: GameState, teamId: string) => Math.max(scores(state)[teamId] ?? 0, 0);
 
-const allCluesUsed = (state: GameState) => Object.keys(state.results).length === CATEGORY_COUNT * VALUES.length;
+const timeUp = (state: GameState, now: number) => state.endsAt !== null && now >= state.endsAt;
+
+const allCluesUsed =(state: GameState) => Object.keys(state.results).length === CATEGORY_COUNT * VALUES.length;
 
 function reveal(state: GameState): GameState {
   const isFinal = state.phase === "finalClue";
@@ -142,7 +145,7 @@ export function reduce(state: GameState, action: Action, now: number): GameState
     }
     case "submit": {
       const isFinal = state.phase === "finalClue";
-      if ((state.phase !== "clue" && !isFinal) || now >= state.endsAt! || !state.teams.some((t) => t.id === action.teamId)) {
+      if ((state.phase !== "clue" && !isFinal) || timeUp(state, now) || !state.teams.some((t) => t.id === action.teamId)) {
         return state;
       }
       const result = isFinal ? state.final! : state.results[state.current!];
@@ -150,11 +153,16 @@ export function reduce(state: GameState, action: Action, now: number): GameState
       const next = isFinal
         ? { ...state, final: { ...result, answers } }
         : { ...state, results: { ...state.results, [state.current!]: { ...result, answers } } };
-      return state.teams.every((t) => answers[t.id] !== undefined) ? reveal(next) : next;
+      // With the timer stopped, only the host ends the round, so teams can keep changing answers.
+      const allIn = state.endsAt !== null && state.teams.every((t) => answers[t.id] !== undefined);
+      return allIn ? reveal(next) : next;
     }
     case "tick":
-      if ((state.phase === "clue" || state.phase === "finalClue") && now >= state.endsAt!) return reveal(state);
+      if ((state.phase === "clue" || state.phase === "finalClue") && timeUp(state, now)) return reveal(state);
       return state;
+    case "stopTimer":
+      if ((state.phase !== "clue" && state.phase !== "finalClue") || state.endsAt === null || timeUp(state, now)) return state;
+      return { ...state, endsAt: null };
     case "endRound":
       if (state.phase === "clue" || state.phase === "finalClue") return reveal(state);
       if (state.phase === "finalWager") return openFinal(state, now);

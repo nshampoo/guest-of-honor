@@ -26,7 +26,7 @@ export function TimerSelect({ state, act }: Pick<Props, "state" | "act">) {
     <label>
       Seconds per clue{" "}
       <select value={state.timerMs / 1000} onChange={(e) => act({ type: "setTimer", ms: Number(e.target.value) * 1000 })}>
-        {[15, 30, 45, 60].map((s) => (
+        {[30, 60, 90, 120].map((s) => (
           <option key={s}>{s}</option>
         ))}
       </select>
@@ -102,11 +102,15 @@ export function BoardScreen({ state, act, mode }: Props) {
   );
 }
 
+export function Countdown({ endsAt, now, small = false }: { endsAt: number | null; now: number; small?: boolean }) {
+  if (endsAt === null) return <p className="timer stopped">No time limit</p>;
+  return <p className={small ? "timer small" : "timer"}>{Math.max(0, Math.ceil((endsAt - now) / 1000))}</p>;
+}
+
 export function ClueScreen({ state, act, now, mode, ready = [] }: Props) {
   const isFinal = state.phase === "finalClue";
   const clue = isFinal ? state.board.final : clueAt(state.board, state.current!);
   const result = isFinal ? state.final! : state.results[state.current!];
-  const seconds = Math.max(0, Math.ceil((state.endsAt! - now) / 1000));
   return (
     <main className="clue">
       <p className="eyebrow">
@@ -114,7 +118,7 @@ export function ClueScreen({ state, act, now, mode, ready = [] }: Props) {
         {"value" in clue ? ` · ${clue.value}` : " · Final round"}
       </p>
       <h1>{clue.clue}</h1>
-      <p className="timer">{seconds}</p>
+      <Countdown endsAt={state.endsAt} now={now} />
       {mode === "tv" && (
         <p className="muted">
           {ready.length} of {state.teams.length} teams have answered
@@ -134,9 +138,12 @@ export function ClueScreen({ state, act, now, mode, ready = [] }: Props) {
         </>
       )}
       {mode !== "tv" && (
-        <button className="primary" onClick={() => act({ type: "endRound" })}>
-          End round
-        </button>
+        <div className="row">
+          <button className="primary" onClick={() => act({ type: "endRound" })}>
+            End round
+          </button>
+          {state.endsAt !== null && <button onClick={() => act({ type: "stopTimer" })}>Stop timer</button>}
+        </div>
       )}
     </main>
   );
