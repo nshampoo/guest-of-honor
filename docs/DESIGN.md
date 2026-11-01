@@ -139,20 +139,49 @@ api Lambda ──▶ Claude API (interview, clues, fact-check)
 |---|---|---|---|
 | `GAME#<id>` | `META` | Title, honoree, visibility, created time, board | Board only, through its link or the gallery |
 | `SESSION#<id>` | `CHAT` | Interview transcript | Never. Expires after 30 days. |
-| `ROOM#<code>` | `STATE` | Game id, engine state, TV and host connections | Expires after 1 day |
-| `ROOM#<code>` | `TEAM#<teamId>` | Team name, current connection | Expires after 1 day |
+| `ROOM#<code>` | `STATE` | The whole room: engine state (teams, scores, clues), host id, connections, and a version number | Expires after 1 day |
+| `CONN#<connId>` | `ROOM` | Which room a connection is in | Expires after 1 day |
 
 - Game ids are long and random, so unlisted links can't be guessed.
 - A GSI on created time powers the gallery and my "what's been made" script.
 
 ## 7. Phases
 
-1. **Board and engine, single-screen play.** Board type and validator, game reducer, answer matching, all tested. A single-screen app that plays a hand-written sample board. No backend. *Done 2026-11-01.*
-2. **Rooms, locally.** Pure room logic (who's connected, what each device may see), a local WebSocket dev server, and the TV, host, and team screens. Start screen with QR code, host claim, team names, timer with end early, reveal and judge, running scoreboard. Test with real phones on home wifi. *Built 2026-11-01 and verified with a scripted four-device game in headless Chrome. Not yet tried on real phones.*
-3. **Rooms on AWS.** CDK stack: S3 and CloudFront for the app, API Gateway WebSocket API, rooms Lambda, DynamoDB.
-4. **Builder agent in the terminal.** A local script that runs the interview and writes a board JSON. Learn the Claude API and tool use before adding more infra.
-5. **Builder on the web.** api Lambda, password gate, chat UI, editor with re-roll and pencil, unlisted links, SNS email on create, the owner script.
-6. **Ship.** Gallery, quiet offline download, personal-website pages and workshop row.
+1. **Board and engine, single-screen play.** *Done 2026-11-01.*
+2. **Rooms, locally.** Room logic, local WebSocket dev server, TV, host, and team screens, QR code, longer timers, stop timer. *Built 2026-11-01 and verified with a scripted four-device game in headless Chrome. Not yet tried on real phones.*
+
+### 3. Rooms on AWS
+- [ ] `infra/` CDK app (TypeScript), one stack, same shape as the other shampoe.com apps.
+- [ ] Site: private S3 bucket behind CloudFront (origin access control). `BucketDeployment` uploads `dist/` with `Cache-Control` set, since the shampoe.com proxy only caches files that have it.
+- [ ] `config.json` written by the deploy with the WebSocket URL, so the app build doesn't need to know it. Dev falls back to the local rooms server.
+- [ ] DynamoDB table: `pk`/`sk`, on-demand, TTL on `expiresAt`.
+- [ ] API Gateway WebSocket API with a `prod` stage. `$connect`, `$disconnect`, and `$default` all go to the rooms Lambda.
+- [ ] Rooms Lambda (Node, arm64), bundled with esbuild from `infra/lambda/rooms.ts`. For each message: load the room, run `handle()`, save it, push each device its `viewFor()` through the API Gateway Management API.
+- [ ] Save with a version number and a conditional write; retry on conflict. Two teams answering in the same instant must not overwrite each other.
+- [ ] `CONN#<connId>` items map a connection to its room, for `$disconnect`. Connections that are gone (410) get dropped from the room.
+- [ ] Least-privilege IAM: the Lambda can read and write only this table and post only to this API.
+- [ ] Verify: run the four-device script against the CloudFront URL, then a real game with phones on cellular.
+- [ ] Add to shampoe.com: `apps` entry in personal-website `infra/bin/infra.ts`. Phones connect to the WebSocket URL directly, not through the proxy.
+
+### 4. Builder agent in the terminal
+- [ ] `@anthropic-ai/sdk`, API key via `ant auth login` or gitignored `local/`.
+- [ ] `npm run build-board`: interview in the terminal, `propose_categories` tool, approve or edit categories.
+- [ ] One clue-writing call per category in parallel, with `web_search` for fact-checking and a strict `write_clues` tool. Then the final clue.
+- [ ] `validateBoard`, save to `boards/<name>.json`.
+- [ ] Home page "load a board" so the TV can host any board file.
+- [ ] Try it on a real friend. Log tokens and searches per run to check the cost math.
+
+### 5. Builder on the web
+- [ ] api Lambda function URL behind CloudFront at `/api/*`, streaming responses.
+- [ ] Password in SSM, checked before any Claude call. Daily cap counter.
+- [ ] `GAME#` and `SESSION#` items. Rooms start from a game id instead of the TV sending a board.
+- [ ] Chat UI, category cards, board editor with re-roll, pencil, and sources. Save unlisted or to the gallery.
+- [ ] SNS topic with my email (passed at deploy), published on every save.
+- [ ] `npm run recent` owner script.
+
+### 6. Ship
+- [ ] Gallery page and the quiet offline download.
+- [ ] personal-website: story page at `site/guest-of-honor/`, `/open/` page, workshop row with `data-repo`, deploy.
 
 ## 8. Decided
 
