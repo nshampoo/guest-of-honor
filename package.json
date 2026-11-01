@@ -5,7 +5,9 @@
   "scripts": {
     "dev": "vite",
     "build": "tsc --noEmit && vite build",
-    "test": "vitest run"
+    "test": "vitest run",
+    "diff": "npm run build && cd infra && npx cdk diff",
+    "deploy": "npm run build && cd infra && npx cdk deploy"
   },
   "dependencies": {
     "qrcode": "^1.5.4",

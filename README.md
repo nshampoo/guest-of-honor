@@ -17,7 +17,14 @@ To play with phones: open the **Network** address `npm run dev` prints (like `ht
 
 ## Deploy
 
-Not deployed yet.
+```
+aws login --profile personal
+(cd infra && npm install)
+npm run diff     # build the app, show what would change
+npm run deploy   # build the app, deploy the stack
+```
+
+The stack is `GuestOfHonor` in `us-east-1` (`cdk.json` pins the `personal` profile). It outputs `SiteUrl` (CloudFront) and `RoomUrl` (WebSocket API). The deploy writes `config.json` next to the app with `RoomUrl`, so phones know where to connect. shampoe.com serves `SiteUrl` at `/guest-of-honor/app/` (listed under `apps` in the personal-website repo's `infra/bin/infra.ts`).
 
 | Path | What |
 | --- | --- |
@@ -25,4 +32,6 @@ Not deployed yet.
 | `src/ui/` | React app: home, single-screen play, TV, host phone, team phone |
 | `src/boards/sample.json` | Hand-written sample board |
 | `dev/rooms-plugin.ts` | Local WebSocket rooms server inside the Vite dev server. Stands in for API Gateway and the rooms Lambda. |
+| `infra/lib/` | CDK stack: S3 + CloudFront for the app, WebSocket API, rooms Lambda, DynamoDB |
+| `infra/lambda/rooms.ts` | Rooms Lambda: loads a room, runs the engine's `handle()`, saves with a version check, pushes each device its view |
 | `docs/DESIGN.md` | Goal, board format, builder and gameplay design, cost, phases, decisions |

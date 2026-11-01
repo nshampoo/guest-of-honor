@@ -1,9 +1,13 @@
 import { useEffect, useRef, useState } from "react";
 import type { ClientMsg, ServerMsg, View } from "../engine/room";
 
-function roomUrl() {
-  if (import.meta.env.VITE_ROOM_URL) return import.meta.env.VITE_ROOM_URL as string;
-  return `${location.protocol === "https:" ? "wss" : "ws"}://${location.host}/room`;
+// The deploy writes config.json with the WebSocket API's URL. In dev there's none, so use the local rooms server.
+const config: Promise<{ roomUrl?: string }> = fetch("./config.json")
+  .then((r) => r.json())
+  .catch(() => ({}));
+
+async function roomUrl() {
+  return (await config).roomUrl ?? `${location.protocol === "https:" ? "wss" : "ws"}://${location.host}/room`;
 }
 
 // Keeps a WebSocket open, sends `hello` on every (re)connect, and holds the latest view.
@@ -20,8 +24,10 @@ export function useRoom(hello: ClientMsg | null) {
     let stopped = false;
     let retries = 0;
     let timer: ReturnType<typeof setTimeout>;
-    const connect = () => {
-      const ws = new WebSocket(roomUrl());
+    const connect = async () => {
+      const url = await roomUrl();
+      if (stopped) return;
+      const ws = new WebSocket(url);
       socket.current = ws;
       ws.onopen = () => {
         retries = 0;
