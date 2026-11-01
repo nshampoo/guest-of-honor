@@ -1,12 +1,13 @@
 import { useEffect, useState } from "react";
-import type { Board } from "../engine/board";
+import { validateBoard } from "../engine/board";
 import { type Action, newGame, reduce } from "../engine/game";
-import sample from "../boards/sample.json";
+import { currentBoard } from "./board";
+import { saveBoard } from "./ids";
 import { PhoneRoom, TvRoom } from "./rooms";
 import { GameScreen } from "./screens";
 
 function LocalGame() {
-  const [state, setState] = useState(() => newGame(sample as Board));
+  const [state, setState] = useState(() => newGame(currentBoard()));
   const [now, setNow] = useState(() => Date.now());
   const act = (action: Action) => setState((s) => reduce(s, action, Date.now()));
 
@@ -25,10 +26,34 @@ function LocalGame() {
 
 function Home() {
   const [code, setCode] = useState("");
+  const [board, setBoard] = useState(currentBoard);
+  const [errors, setErrors] = useState<string[]>([]);
+
+  const load = async (file: File | undefined) => {
+    if (!file) return;
+    let parsed: unknown;
+    try {
+      parsed = JSON.parse(await file.text());
+    } catch {
+      return setErrors(["That file isn't valid JSON."]);
+    }
+    const problems = validateBoard(parsed);
+    setErrors(problems);
+    if (problems.length === 0) {
+      saveBoard(parsed);
+      setBoard(currentBoard());
+    }
+  };
+  const useSample = () => {
+    saveBoard(null);
+    setBoard(currentBoard());
+    setErrors([]);
+  };
+
   return (
     <main className="lobby">
       <p className="eyebrow">Guest of Honor</p>
-      <h1>{sample.title}</h1>
+      <h1>{board.title}</h1>
       <p>Put the board on a TV and play from your phones, or run everything on one screen.</p>
       <a className="primary" href="?tv">
         Start a room on this screen
@@ -38,6 +63,22 @@ function Home() {
         <input value={code} onChange={(e) => setCode(e.target.value)} placeholder="Room code" maxLength={4} />
         <button disabled={code.trim().length !== 4}>Join a room</button>
       </form>
+      <details>
+        <summary>Load a board</summary>
+        <div className="stack">
+          <input type="file" accept="application/json,.json" onChange={(e) => load(e.target.files?.[0])} />
+          {errors.length > 0 && (
+            <ul className="banner">
+              {errors.slice(0, 5).map((e) => (
+                <li key={e}>{e}</li>
+              ))}
+            </ul>
+          )}
+          <button className="link" onClick={useSample}>
+            Use the sample board
+          </button>
+        </div>
+      </details>
     </main>
   );
 }

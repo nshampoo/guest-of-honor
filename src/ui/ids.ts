@@ -29,3 +29,14 @@ export function deviceId(): string {
 
 export const savedRole = (code: string) => stored(`goh-role-${code}`);
 export const saveRole = (code: string, role: string | null) => store(`goh-role-${code}`, role);
+
+// A board loaded from a file on the home page; the TV and single-screen game use it instead of the sample.
+export function loadedBoard(): unknown {
+  const json = stored("goh-board");
+  try {
+    return json ? JSON.parse(json) : null;
+  } catch {
+    return null;
+  }
+}
+export const saveBoard = (board: unknown) => store("goh-board", board === null ? null : JSON.stringify(board));

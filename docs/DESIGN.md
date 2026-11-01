@@ -170,7 +170,7 @@ api Lambda ──▶ Claude API (interview, clues, fact-check)
 - [ ] `npm run build-board`: interview in the terminal, `propose_categories` tool, approve or edit categories.
 - [ ] One clue-writing call per category in parallel, with `web_search` for fact-checking and a strict `write_clues` tool. Then the final clue.
 - [ ] `validateBoard`, save to `boards/<name>.json`.
-- [ ] Home page "load a board" so the TV can host any board file.
+- [x] Home page "load a board" so the TV can host any board file.
 - [ ] Try it on a real friend. Log tokens and searches per run to check the cost math.
 
 ### 5. Builder on the web

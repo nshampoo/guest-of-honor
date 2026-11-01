@@ -1,9 +1,8 @@
 import { useEffect, useRef, useState } from "react";
 import QRCode from "qrcode";
-import type { Board } from "../engine/board";
 import type { Action } from "../engine/game";
 import type { ClientMsg, Role, View } from "../engine/room";
-import sample from "../boards/sample.json";
+import { currentBoard } from "./board";
 import { deviceId, saveRole, savedRole } from "./ids";
 import { GameScreen, TimerSelect } from "./screens";
 import { TeamPhone } from "./team";
@@ -54,7 +53,7 @@ function TvLobby({ view }: { view: View }) {
 
 export function TvRoom({ code: initial }: { code: string | null }) {
   const [code, setCode] = useState(initial);
-  const hello: ClientMsg = code ? { t: "join", code, role: "tv", id: "tv" } : { t: "create", board: sample as Board };
+  const hello: ClientMsg = code ? { t: "join", code, role: "tv", id: "tv" } : { t: "create", board: currentBoard() };
   const room = useRoom(hello);
   const now = useTicker(isTimed(room.view), room.serverNow);
 
